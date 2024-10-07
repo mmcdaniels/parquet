@@ -40,10 +40,12 @@ defmodule Parquet.BinaryEncodings do
   end
 
   @doc """
-    Encodes unsigned integer binary input into ULEB128-encoded binary output.
+    Converts unsigned integer input to ULEB128-encoded binary output.
   """
-  def encode_ULEB128(bin) when is_binary(bin) do
-    trimmed = trim_leading_zeros(bin)
+  def uint_to_uleb128_bin(uint) when uint >= 0 do
+    uint_bin = :binary.encode_unsigned(uint)
+
+    trimmed = trim_leading_zeros(uint_bin)
     trimmed_rem_7 = rem(count_bits(trimmed), 7)
 
     padded =
@@ -64,10 +66,10 @@ defmodule Parquet.BinaryEncodings do
   end
 
   @doc """
-  Decodes ULEB128-encoded binary input into n-bit unsigned integer binary output,
-  where n is the smallest multiple of 8 that fits the output.
+    Converts ULEB128-encoded binary input to unsigned integer output.
   """
-  def decode_ULEB128(bin) when is_binary(bin) do
+
+  def uleb128_bin_to_uint(bin) when is_binary(bin) do
     trimmed =
       bin
       |> :binary.bin_to_list()
@@ -81,44 +83,35 @@ defmodule Parquet.BinaryEncodings do
 
     trimmed_rem_8 = rem(count_bits(trimmed), 8)
 
-    if trimmed_rem_8 != 0 do
-      pad_leading_zeros(trimmed, 8 - trimmed_rem_8)
+    uint_bin =
+      if trimmed_rem_8 != 0 do
+        pad_leading_zeros(trimmed, 8 - trimmed_rem_8)
+      else
+        trimmed
+      end
+
+    :binary.decode_unsigned(uint_bin)
+  end
+
+  @doc """
+    Converts signed integer input to zigzag-encoded unsigned integer output.
+  """
+  def int_to_zigzag_uint(int) do
+    if int >= 0 do
+      2 * int
     else
-      trimmed
+      2 * abs(int) - 1
     end
   end
 
   @doc """
-    Encodes signed integer binary input into zigzag-encoded binary output.
+    Converts zigzag-encoded unsigned integer input to signed integer output
   """
-  def encode_zigzag(bin) when is_binary(bin) do
-    n = count_bits(bin)
-    <<v::signed-size(n)>> = bin
-
-    r =
-      if v >= 0 do
-        2 * v
-      else
-        2 * abs(v) - 1
-      end
-
-    <<r::unsigned-size(n)>>
-  end
-
-  @doc """
-  Decodes zigzag-encoded binary input into signed integer binary output
-  """
-  def decode_zigzag(bin) when is_binary(bin) do
-    n = count_bits(bin)
-    <<v::size(n)>> = bin
-
-    r =
-      if rem(v, 2) == 0 do
-        div(v, 2)
-      else
-        -div(v + 1, 2)
-      end
-
-    <<r::signed-size(n)>>
+  def zigzag_uint_to_int(uint) when uint >= 0 do
+    if rem(uint, 2) == 0 do
+      div(uint, 2)
+    else
+      -div(uint + 1, 2)
+    end
   end
 end
