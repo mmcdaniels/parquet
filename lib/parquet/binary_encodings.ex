@@ -87,4 +87,38 @@ defmodule Parquet.BinaryEncodings do
       trimmed
     end
   end
+
+  @doc """
+    Encodes signed integer binary input into zigzag-encoded binary output.
+  """
+  def encode_zigzag(bin) when is_binary(bin) do
+    n = count_bits(bin)
+    <<v::signed-size(n)>> = bin
+
+    r =
+      if v >= 0 do
+        2 * v
+      else
+        2 * abs(v) - 1
+      end
+
+    <<r::unsigned-size(n)>>
+  end
+
+  @doc """
+  Decodes zigzag-encoded binary input into signed integer binary output
+  """
+  def decode_zigzag(bin) when is_binary(bin) do
+    n = count_bits(bin)
+    <<v::size(n)>> = bin
+
+    r =
+      if rem(v, 2) == 0 do
+        div(v, 2)
+      else
+        -div(v + 1, 2)
+      end
+
+    <<r::signed-size(n)>>
+  end
 end
