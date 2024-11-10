@@ -33,7 +33,23 @@ defmodule Combinators.Result.Text.Cursor do
 end
 
 defmodule Combinators.Result.Binary.Cursor do
-  # TODO Add moduledoc
+  @moduledoc """
+  A binary cursor is the location from the start of the parser input measured in bits.
+
+  A position(P) is the location between bits in a bitstring.
+  Note that positions exist...
+    ...between the start-of-bitstring and the first bit
+    ...between normal bits in a bitstring
+    ...between the last bit and the end-of-bitstring.
+  The origin of a cursor is 1P.
+
+  Example:
+  BITSTRING -> P
+  <<|010>>  -> 1
+  <<0|10>>  -> 2
+  <<01|0>>  -> 3
+  <<010|>>  -> 4
+  """
   defstruct position: 1
 
   @type t :: %__MODULE__{
