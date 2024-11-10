@@ -18,6 +18,7 @@ defmodule Combinators.Control.Test do
     only: [
       either: 1,
       sequence: 1,
+      surrounded: 3,
       tagged_sequence: 1
     ]
 
@@ -268,6 +269,39 @@ defmodule Combinators.Control.Test do
                  %ParseResult.Error{
                    code: :all_parsers_failed,
                    message: "All parsers failed from @(1L:1C)",
+                   cursor: %ParseResult.Text.Cursor{}
+                 }
+               }
+    end
+  end
+
+  describe "surrounded/1" do
+    property "parses from input" do
+      ExUnitProperties.check all(
+                               {first, middle, last} <- {chr_gen(), chr_gen(), chr_gen()},
+                               remaining <- str_gen(),
+                               seq = to_string([first, middle, last]),
+                               input = seq <> remaining
+                             ) do
+        assert surrounded(char(), char_is(middle), char()) |> run(input) ==
+                 {
+                   :ok,
+                   %ParseResult.Ok{
+                     parsed: middle,
+                     remaining: remaining,
+                     cursor: calculate_text_cursor(seq)
+                   }
+                 }
+      end
+    end
+
+    test "errors when not enough input" do
+      assert surrounded(char(), char(), char()) |> run("") ==
+               {
+                 :error,
+                 %ParseResult.Error{
+                   code: :no_more_chars,
+                   message: "No more chars @(1L:1C)",
                    cursor: %ParseResult.Text.Cursor{}
                  }
                }

@@ -126,4 +126,16 @@ defmodule Combinators.Control do
       end
     end
   end
+
+  @doc """
+  Executes the 3 given parsers(pre, value, post) and returns the output of the value parser.
+  """
+  def surrounded(pre_parser, value_parser, post_parser) do
+    sequence([
+      pre_parser,
+      value_parser,
+      post_parser
+    ])
+    |> map(fn [_, value, _] -> value end)
+  end
 end
