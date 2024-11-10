@@ -57,7 +57,7 @@ defmodule Combinators.Result.Binary.Cursor do
         }
 
   defimpl String.Chars, for: __MODULE__ do
-    def to_string(cursor), do: "@(#{cursor.position}C)"
+    def to_string(cursor), do: "@(#{cursor.position}P)"
   end
 end
 
