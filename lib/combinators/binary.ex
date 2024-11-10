@@ -68,16 +68,16 @@ defmodule Combinators.Binary do
   """
   def bit0, do: bit_is(<<0::size(1)>>)
 
-  defp bit_is(<<_::size(1)>> = expected) do
+  defp bit_is(<<_::size(1)>> = bit) do
     fn input, cursor ->
-      res = check(bit(), fn b -> b == expected end, invert: false).(input, cursor)
+      res = check(bit(), fn b -> b == bit end, invert: false).(input, cursor)
 
       with {:error, %Result.Error{code: :predicate_not_satisfied, parsed: parsed}} <- res do
         {
           :error,
           %Result.Error{
             code: :unexpected_bit,
-            message: "#{cursor} Expected `#{inspect(expected)}` but found `#{inspect(parsed)}`.",
+            message: "#{cursor} Expected `#{bit}` but found `#{parsed}`.",
             parsed: parsed,
             cursor: cursor
           }
