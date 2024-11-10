@@ -16,6 +16,7 @@ defmodule Combinators.Control.Test do
 
   import Combinators.Control,
     only: [
+      either: 1,
       sequence: 1,
       tagged_sequence: 1
     ]
@@ -222,6 +223,54 @@ defmodule Combinators.Control.Test do
                |> run(input) ==
                  {:error, :mapper_error, "Something bad happened here"}
       end
+    end
+  end
+
+  describe "either/1" do
+    property "parses from input" do
+      ExUnitProperties.check all(
+                               {chr, other_chr} <- {chr_gen(), chr_gen()},
+                               chr != other_chr,
+                               remaining <- str_gen(),
+                               input = to_string([chr]) <> remaining
+                             ) do
+        # Shuffle the order of alternatives
+        alt = Enum.shuffle([char_is(chr), char_is(other_chr)])
+
+        assert either(alt) |> run(input) ==
+                 {
+                   :ok,
+                   %ParseResult.Ok{
+                     parsed: chr,
+                     remaining: remaining,
+                     cursor: calculate_text_cursor(to_string([chr]))
+                   }
+                 }
+      end
+    end
+
+    test "errors when no parsers succeed" do
+      assert either([char_is(?a), char_is(?b)]) |> run("z") ==
+               {
+                 :error,
+                 %ParseResult.Error{
+                   code: :all_parsers_failed,
+                   message: "All parsers failed from @(1L:1C)",
+                   cursor: %ParseResult.Text.Cursor{}
+                 }
+               }
+    end
+
+    test "errors when not enough input" do
+      assert either([char(), char()]) |> run("") ==
+               {
+                 :error,
+                 %ParseResult.Error{
+                   code: :all_parsers_failed,
+                   message: "All parsers failed from @(1L:1C)",
+                   cursor: %ParseResult.Text.Cursor{}
+                 }
+               }
     end
   end
 end

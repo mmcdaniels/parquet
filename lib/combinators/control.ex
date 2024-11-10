@@ -97,4 +97,33 @@ defmodule Combinators.Control do
       end
     end
   end
+
+  @doc """
+  Executes each parser in the given list of parsers until one succeeds.
+
+  If no parser succeeds then returns an error.
+  """
+  def either(parsers) do
+    fn input, cursor ->
+      case parsers do
+        [] ->
+          message = "All parsers failed from #{cursor}"
+
+          {
+            :error,
+            %ParseResult.Error{
+              code: :all_parsers_failed,
+              message: message,
+              cursor: cursor
+            }
+          }
+
+        [first | rest] ->
+          case first.(input, cursor) do
+            {:ok, parse_result} -> {:ok, parse_result}
+            {:error, _} -> either(rest).(input, cursor)
+          end
+      end
+    end
+  end
 end
