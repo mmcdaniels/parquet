@@ -13,7 +13,8 @@ defmodule Combinators.BinaryTest do
       bit: 0,
       bit1: 0,
       bit0: 0,
-      byte: 0
+      byte_is: 1,
+      byte_is_not: 1
     ]
 
   alias Combinators.Result
@@ -149,6 +150,111 @@ defmodule Combinators.BinaryTest do
 
     test "errors when no more bytes" do
       assert Combinators.Binary.byte() |> run(<<1::size(7)>>, :binary) ==
+               {
+                 :error,
+                 %Result.Error{
+                   code: :no_more_bytes,
+                   message: "No more bytes @(1P)",
+                   cursor: %Result.Binary.Cursor{}
+                 }
+               }
+    end
+  end
+
+  describe "byte_is/1" do
+    test "reads wanted byte" do
+      ExUnitProperties.check all(
+                               wanted <- byte_gen(),
+                               remaining <- bitstr_gen(),
+                               input = <<wanted::binary, remaining::bitstring>>
+                             ) do
+        assert byte_is(wanted) |> run(input, :binary) ==
+                 {
+                   :ok,
+                   %Result.Ok{
+                     parsed: wanted,
+                     remaining: remaining,
+                     cursor: calculate_binary_cursor(wanted)
+                   }
+                 }
+      end
+    end
+
+    test "errors when not wanted byte" do
+      ExUnitProperties.check all(
+                               {wanted, other} <- {byte_gen(), byte_gen()},
+                               wanted != other,
+                               remaining <- bitstr_gen(),
+                               input = <<other::binary, remaining::bitstring>>
+                             ) do
+        assert byte_is(wanted) |> run(input, :binary) ==
+                 {
+                   :error,
+                   %Result.Error{
+                     code: :unexpected_byte,
+                     parsed: other,
+                     message: "@(1P) Expected `#{wanted}` but found `#{other}`.",
+                     cursor: %Result.Binary.Cursor{}
+                   }
+                 }
+      end
+    end
+
+    test "errors when no more bytes" do
+      assert byte_is(<<0xAB>>) |> run(<<>>, :binary) ==
+               {
+                 :error,
+                 %Result.Error{
+                   code: :no_more_bytes,
+                   message: "No more bytes @(1P)",
+                   cursor: %Result.Binary.Cursor{}
+                 }
+               }
+    end
+  end
+
+  describe "byte_is_not/1" do
+    test "reads when not unwanted byte" do
+      ExUnitProperties.check all(
+                               {unwanted, other} <- {byte_gen(), byte_gen()},
+                               unwanted != other,
+                               remaining <- bitstr_gen(),
+                               input = <<other::binary, remaining::bitstring>>
+                             ) do
+        assert byte_is_not(unwanted) |> run(input, :binary) ==
+                 {
+                   :ok,
+                   %Result.Ok{
+                     parsed: other,
+                     remaining: remaining,
+                     cursor: calculate_binary_cursor(other)
+                   }
+                 }
+      end
+    end
+
+    test "errors when unwanted byte" do
+      ExUnitProperties.check all(
+                               {unwanted, other} <- {byte_gen(), byte_gen()},
+                               unwanted != other,
+                               remaining <- bitstr_gen(),
+                               input = <<unwanted::binary, remaining::bitstring>>
+                             ) do
+        assert byte_is_not(unwanted) |> run(input, :binary) ==
+                 {
+                   :error,
+                   %Result.Error{
+                     code: :unexpected_byte,
+                     parsed: unwanted,
+                     message: "@(1P) Found `#{unwanted}`.",
+                     cursor: %Result.Binary.Cursor{}
+                   }
+                 }
+      end
+    end
+
+    test "errors when no more bytes" do
+      assert byte_is_not(<<0xAB>>) |> run(<<>>, :binary) ==
                {
                  :error,
                  %Result.Error{

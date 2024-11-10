@@ -85,4 +85,46 @@ defmodule Combinators.Binary do
       end
     end
   end
+
+  @doc """
+  Parses a byte from the input if it matches `byte`.
+  """
+  def byte_is(<<_::size(8)>> = byte) do
+    fn input, cursor ->
+      res = check(byte(), fn b -> b == byte end, invert: false).(input, cursor)
+
+      with {:error, %Result.Error{code: :predicate_not_satisfied, parsed: parsed}} <- res do
+        {
+          :error,
+          %Result.Error{
+            code: :unexpected_byte,
+            message: "#{cursor} Expected `#{byte}` but found `#{parsed}`.",
+            parsed: parsed,
+            cursor: cursor
+          }
+        }
+      end
+    end
+  end
+
+  @doc """
+  Parses a byte from the input if it does not match `byte`.
+  """
+  def byte_is_not(byte) do
+    fn input, cursor ->
+      res = check(byte(), fn b -> b != byte end, invert: false).(input, cursor)
+
+      with {:error, %Result.Error{code: :predicate_not_satisfied, parsed: parsed}} <- res do
+        {
+          :error,
+          %Result.Error{
+            code: :unexpected_byte,
+            message: "#{cursor} Found `#{byte}`.",
+            parsed: parsed,
+            cursor: cursor
+          }
+        }
+      end
+    end
+  end
 end
