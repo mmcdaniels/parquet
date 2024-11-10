@@ -1,12 +1,14 @@
 defmodule Combinators.Base do
+  alias Combinators.Result
+
   @doc """
   Executes the parser on `input`.
 
   The initial cursor represents the starting position of the input stream. Parsers update this position
   after running and report it in the case of a parser error.
   """
-  def run(parser, input, :text), do: parser.(input, %ParseResult.Text.Cursor{})
-  def run(parser, input, :binary), do: parser.(input, %ParseResult.Binary.Cursor{})
+  def run(parser, input, :text), do: parser.(input, %Result.Text.Cursor{})
+  def run(parser, input, :binary), do: parser.(input, %Result.Binary.Cursor{})
 
   @doc """
     Takes the parsed output of `parser` and passes it to the predicate function.
@@ -18,7 +20,7 @@ defmodule Combinators.Base do
     fn input, cursor ->
       with {
              :ok,
-             %ParseResult.Ok{parsed: parsed} = ok
+             %Result.Ok{parsed: parsed} = ok
            } <- parser.(input, cursor) do
         predicate_check =
           if invert do
@@ -35,7 +37,7 @@ defmodule Combinators.Base do
 
           {
             :error,
-            %ParseResult.Error{
+            %Result.Error{
               code: :predicate_not_satisfied,
               message: message,
               parsed: parsed,

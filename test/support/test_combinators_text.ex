@@ -1,5 +1,6 @@
 defmodule Combinators.TextTest.Helpers do
   use ExUnitProperties
+  alias Combinators.Result
 
   @doc """
   Calculates the cursor position assuming that `str` is parsed successfully.
@@ -15,7 +16,7 @@ defmodule Combinators.TextTest.Helpers do
           end
       end
 
-    %ParseResult.Text.Cursor{line: line, column: column}
+    %Result.Text.Cursor{line: line, column: column}
   end
 
   @doc """

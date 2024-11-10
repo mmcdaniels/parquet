@@ -3,6 +3,7 @@ defmodule Combinators.Text do
   Combinators that operate on text input.
   """
   import Combinators.Base
+  alias Combinators.Result
 
   @doc """
   Parses a character from the input.
@@ -17,20 +18,20 @@ defmodule Combinators.Text do
             {cursor.line, cursor.column + 1}
           end
 
-        cursor = %ParseResult.Text.Cursor{
+        cursor = %Result.Text.Cursor{
           cursor
           | line: line,
             column: column
         }
 
-        {:ok, %ParseResult.Ok{parsed: chr, remaining: remaining, cursor: cursor}}
+        {:ok, %Result.Ok{parsed: chr, remaining: remaining, cursor: cursor}}
       else
         _ ->
           message = "No more chars #{cursor}"
 
           {
             :error,
-            %ParseResult.Error{
+            %Result.Error{
               code: :no_more_chars,
               message: message,
               cursor: cursor
@@ -45,11 +46,11 @@ defmodule Combinators.Text do
   """
   def char_is(chr) do
     fn input, cursor ->
-      with {:error, %ParseResult.Error{code: :predicate_not_satisfied, parsed: parsed}} <-
+      with {:error, %Result.Error{code: :predicate_not_satisfied, parsed: parsed}} <-
              char_is_base(chr, false).(input, cursor) do
         {
           :error,
-          %ParseResult.Error{
+          %Result.Error{
             code: :unexpected_char,
             message:
               "#{cursor} Expected `#{to_string([chr])}` but found `#{to_string([parsed])}`.",
@@ -66,11 +67,11 @@ defmodule Combinators.Text do
   """
   def char_is_not(chr) do
     fn input, cursor ->
-      with {:error, %ParseResult.Error{code: :predicate_not_satisfied, parsed: parsed}} <-
+      with {:error, %Result.Error{code: :predicate_not_satisfied, parsed: parsed}} <-
              char_is_base(chr, true).(input, cursor) do
         {
           :error,
-          %ParseResult.Error{
+          %Result.Error{
             code: :unexpected_char,
             message: "#{cursor} Found `#{to_string([chr])}`.",
             parsed: parsed,
@@ -94,7 +95,7 @@ defmodule Combinators.Text do
         "" ->
           {
             :ok,
-            %ParseResult.Ok{
+            %Result.Ok{
               :parsed => to_string(Enum.reverse(acc)),
               :remaining => input,
               :cursor => cursor
@@ -102,17 +103,17 @@ defmodule Combinators.Text do
           }
 
         <<ch::utf8, rest::binary>> ->
-          with {:ok, %ParseResult.Ok{parsed: parsed, remaining: remaining, cursor: cursor}} <-
+          with {:ok, %Result.Ok{parsed: parsed, remaining: remaining, cursor: cursor}} <-
                  char_is(ch).(input, cursor) do
             string_is(rest, [parsed | acc]).(remaining, cursor)
           else
-            {:error, %ParseResult.Error{code: :unexpected_char, parsed: parsed_char}} ->
+            {:error, %Result.Error{code: :unexpected_char, parsed: parsed_char}} ->
               parsed_string = to_string(Enum.reverse([parsed_char | acc]))
               expected_string = to_string(Enum.reverse([ch | acc]))
 
               {
                 :error,
-                %ParseResult.Error{
+                %Result.Error{
                   code: :unexpected_string,
                   message:
                     "#{cursor} Expected `#{expected_string}` but found `#{parsed_string}`.",

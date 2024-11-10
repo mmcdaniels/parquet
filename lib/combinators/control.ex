@@ -2,6 +2,7 @@ defmodule Combinators.Control do
   @moduledoc """
   Combinators that operate on other combinators.
   """
+  alias Combinators.Result
 
   @doc """
   Executes a list of parsers in order.
@@ -13,14 +14,14 @@ defmodule Combinators.Control do
       case parsers do
         [] ->
           {:ok,
-           %ParseResult.Ok{
+           %Result.Ok{
              :parsed => Enum.reverse(parsed_list_rev),
              :remaining => input,
              :cursor => cursor
            }}
 
         [parser | rest_parsers] ->
-          with {:ok, %ParseResult.Ok{parsed: parsed, remaining: remaining, cursor: cursor}} <-
+          with {:ok, %Result.Ok{parsed: parsed, remaining: remaining, cursor: cursor}} <-
                  parser.(input, cursor) do
             parsed_list_rev = [parsed | parsed_list_rev]
             sequence(rest_parsers, parsed_list_rev).(remaining, cursor)
@@ -43,7 +44,7 @@ defmodule Combinators.Control do
       case tagged_parsers do
         [] ->
           {:ok,
-           %ParseResult.Ok{
+           %Result.Ok{
              parsed: parsed_map,
              remaining: input,
              cursor: cursor
@@ -60,7 +61,7 @@ defmodule Combinators.Control do
             }
           else
             with {:ok,
-                  %ParseResult.Ok{
+                  %Result.Ok{
                     parsed: parsed,
                     remaining: remaining,
                     cursor: position
@@ -84,16 +85,16 @@ defmodule Combinators.Control do
   end
 
   @doc """
-  Applies the given function to the parsed value and returns the updated ParseResult.
+  Applies the given function to the parsed value and returns the updated Result.
 
   Exceptions in the mapper function are caught and returned as an error tuple.
   """
   def map(parser, mapper) do
     fn input, cursor ->
-      with {:ok, %ParseResult.Ok{parsed: parsed} = ok} <- parser.(input, cursor) do
+      with {:ok, %Result.Ok{parsed: parsed} = ok} <- parser.(input, cursor) do
         try do
           mapped = mapper.(parsed)
-          {:ok, %ParseResult.Ok{ok | parsed: mapped}}
+          {:ok, %Result.Ok{ok | parsed: mapped}}
         rescue
           # TODO provide more detail about the exception. Potentially include the stacktrace and the exception type.
           e -> {:error, :mapper_error, Exception.message(e)}
@@ -115,7 +116,7 @@ defmodule Combinators.Control do
 
           {
             :error,
-            %ParseResult.Error{
+            %Result.Error{
               code: :all_parsers_failed,
               message: message,
               cursor: cursor
@@ -147,19 +148,19 @@ defmodule Combinators.Control do
   Tries to parse using the given parser.
 
   If the parser fails because the end of input was reached, then returns an error.
-  If the parser fails for other reasons, then returns an Ok ParseResult with a nil parsed value.
+  If the parser fails for other reasons, then returns an Ok Result with a nil parsed value.
   Otherwise, returns the parser output.
   """
   def maybe(parser) do
     fn input, cursor ->
       case parser.(input, cursor) do
-        {:error, %ParseResult.Error{code: :no_more_chars} = err} ->
+        {:error, %Result.Error{code: :no_more_chars} = err} ->
           {:error, err}
 
         {:error, _} ->
           {
             :ok,
-            %ParseResult.Ok{
+            %Result.Ok{
               parsed: nil,
               remaining: input,
               cursor: cursor
@@ -185,7 +186,7 @@ defmodule Combinators.Control do
       if length(parsed_list_rev) >= up_to do
         {
           :ok,
-          %ParseResult.Ok{
+          %Result.Ok{
             parsed: Enum.reverse(parsed_list_rev),
             remaining: input,
             cursor: cursor
@@ -194,7 +195,7 @@ defmodule Combinators.Control do
       else
         case parser.(input, cursor) do
           {:ok,
-           %ParseResult.Ok{
+           %Result.Ok{
              parsed: parsed,
              remaining: remaining,
              cursor: cursor
@@ -206,7 +207,7 @@ defmodule Combinators.Control do
             if is_nil(at_least) or length(parsed_list_rev) >= at_least do
               {
                 :ok,
-                %ParseResult.Ok{
+                %Result.Ok{
                   parsed: Enum.reverse(parsed_list_rev),
                   remaining: input,
                   cursor: cursor
@@ -214,7 +215,7 @@ defmodule Combinators.Control do
               }
             else
               {:error,
-               %ParseResult.Error{
+               %Result.Error{
                  code: :min_bound_not_met,
                  message: "Did not repeat at least #{at_least} times",
                  cursor: cursor
@@ -235,14 +236,14 @@ defmodule Combinators.Control do
       case until_parser.(input, cursor) do
         {:error, _} ->
           case repeat_parser.(input, cursor) do
-            {:ok, %ParseResult.Ok{parsed: parsed, remaining: remaining, cursor: cursor}} ->
+            {:ok, %Result.Ok{parsed: parsed, remaining: remaining, cursor: cursor}} ->
               parsed_list_rev = [parsed | parsed_list_rev]
               repeat_until(repeat_parser, until_parser, parsed_list_rev).(remaining, cursor)
 
             {:error, _} ->
               {
                 :ok,
-                %ParseResult.Ok{
+                %Result.Ok{
                   parsed: Enum.reverse(parsed_list_rev),
                   remaining: input,
                   cursor: cursor
@@ -253,7 +254,7 @@ defmodule Combinators.Control do
         {:ok, _} ->
           {
             :ok,
-            %ParseResult.Ok{
+            %Result.Ok{
               parsed: Enum.reverse(parsed_list_rev),
               remaining: input,
               cursor: cursor

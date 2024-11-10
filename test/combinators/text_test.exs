@@ -16,6 +16,8 @@ defmodule Combinators.TextTest do
       string_is: 1
     ]
 
+  alias Combinators.Result
+
   describe "char/0" do
     property "reads char" do
       ExUnitProperties.check all(
@@ -26,7 +28,7 @@ defmodule Combinators.TextTest do
         assert char() |> run(input, :text) ==
                  {
                    :ok,
-                   %ParseResult.Ok{
+                   %Result.Ok{
                      parsed: chr,
                      remaining: remaining,
                      cursor: calculate_text_cursor(to_string([chr]))
@@ -43,10 +45,10 @@ defmodule Combinators.TextTest do
         assert char() |> run(input, :text) ==
                  {
                    :ok,
-                   %ParseResult.Ok{
+                   %Result.Ok{
                      parsed: ?\n,
                      remaining: remaining,
-                     cursor: %ParseResult.Text.Cursor{line: 2, column: 1}
+                     cursor: %Result.Text.Cursor{line: 2, column: 1}
                    }
                  }
       end
@@ -56,10 +58,10 @@ defmodule Combinators.TextTest do
       assert char() |> run("", :text) ==
                {
                  :error,
-                 %ParseResult.Error{
+                 %Result.Error{
                    code: :no_more_chars,
                    message: "No more chars @(1L:1C)",
-                   cursor: %ParseResult.Text.Cursor{}
+                   cursor: %Result.Text.Cursor{}
                  }
                }
     end
@@ -75,7 +77,7 @@ defmodule Combinators.TextTest do
         assert char_is(expected) |> run(input, :text) ==
                  {
                    :ok,
-                   %ParseResult.Ok{
+                   %Result.Ok{
                      parsed: expected,
                      remaining: remaining,
                      cursor: calculate_text_cursor(to_string([expected]))
@@ -92,12 +94,12 @@ defmodule Combinators.TextTest do
                                remaining <- str_gen(),
                                input = to_string([actual]) <> remaining
                              ) do
-        cursor = %ParseResult.Text.Cursor{}
+        cursor = %Result.Text.Cursor{}
 
         assert char_is(expected) |> run(input, :text) ==
                  {
                    :error,
-                   %ParseResult.Error{
+                   %Result.Error{
                      code: :unexpected_char,
                      message:
                        "#{cursor} Expected `#{to_string([expected])}` but found `#{to_string([actual])}`.",
@@ -113,10 +115,10 @@ defmodule Combinators.TextTest do
         assert char_is(chr) |> run("", :text) ==
                  {
                    :error,
-                   %ParseResult.Error{
+                   %Result.Error{
                      code: :no_more_chars,
                      message: "No more chars @(1L:1C)",
-                     cursor: %ParseResult.Text.Cursor{}
+                     cursor: %Result.Text.Cursor{}
                    }
                  }
       end
@@ -135,7 +137,7 @@ defmodule Combinators.TextTest do
         assert char_is_not(unexpected) |> run(input, :text) ==
                  {
                    :ok,
-                   %ParseResult.Ok{
+                   %Result.Ok{
                      parsed: chr,
                      remaining: remaining,
                      cursor: calculate_text_cursor(to_string([chr]))
@@ -152,12 +154,12 @@ defmodule Combinators.TextTest do
                                remaining <- str_gen(),
                                input = to_string([unexpected]) <> remaining
                              ) do
-        cursor = %ParseResult.Text.Cursor{}
+        cursor = %Result.Text.Cursor{}
 
         assert char_is_not(unexpected) |> run(input, :text) ==
                  {
                    :error,
-                   %ParseResult.Error{
+                   %Result.Error{
                      code: :unexpected_char,
                      message: "#{cursor} Found `#{to_string([unexpected])}`.",
                      parsed: unexpected,
@@ -172,10 +174,10 @@ defmodule Combinators.TextTest do
         assert char_is_not(chr) |> run("", :text) ==
                  {
                    :error,
-                   %ParseResult.Error{
+                   %Result.Error{
                      code: :no_more_chars,
                      message: "No more chars @(1L:1C)",
-                     cursor: %ParseResult.Text.Cursor{}
+                     cursor: %Result.Text.Cursor{}
                    }
                  }
       end
@@ -192,7 +194,7 @@ defmodule Combinators.TextTest do
         assert string_is(expected) |> run(input, :text) ==
                  {
                    :ok,
-                   %ParseResult.Ok{
+                   %Result.Ok{
                      parsed: expected,
                      remaining: remaining,
                      cursor: calculate_text_cursor(expected)
@@ -218,7 +220,7 @@ defmodule Combinators.TextTest do
         assert string_is(expected) |> run(input, :text) ==
                  {
                    :error,
-                   %ParseResult.Error{
+                   %Result.Error{
                      code: :unexpected_string,
                      message: "#{cursor} Expected `#{expected}` but found `#{actual}`.",
                      parsed: actual,
@@ -236,10 +238,10 @@ defmodule Combinators.TextTest do
         assert string_is(str) |> run("", :text) ==
                  {
                    :error,
-                   %ParseResult.Error{
+                   %Result.Error{
                      code: :no_more_chars,
                      message: "No more chars @(1L:1C)",
-                     cursor: %ParseResult.Text.Cursor{}
+                     cursor: %Result.Text.Cursor{}
                    }
                  }
       end

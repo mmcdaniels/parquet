@@ -2,6 +2,7 @@ defmodule Combinators.Control.Test do
   use ExUnit.Case
   use ExUnitProperties
   import Combinators.TextTest.Helpers
+  alias Combinators.Result
 
   import Combinators.Base,
     only: [
@@ -38,7 +39,7 @@ defmodule Combinators.Control.Test do
         assert sequence([char(), char_is(middle), char()]) |> run(input, :text) ==
                  {
                    :ok,
-                   %ParseResult.Ok{
+                   %Result.Ok{
                      parsed: [first, middle, last],
                      remaining: remaining,
                      cursor: calculate_text_cursor(seq)
@@ -51,11 +52,11 @@ defmodule Combinators.Control.Test do
       assert sequence([char_is(?a), char_is(?b), char_is(?z)]) |> run("abc", :text) ==
                {
                  :error,
-                 %ParseResult.Error{
+                 %Result.Error{
                    code: :unexpected_char,
                    message: "@(1L:3C) Expected `z` but found `c`.",
                    parsed: ?c,
-                   cursor: %ParseResult.Text.Cursor{line: 1, column: 3}
+                   cursor: %Result.Text.Cursor{line: 1, column: 3}
                  }
                }
     end
@@ -64,10 +65,10 @@ defmodule Combinators.Control.Test do
       assert sequence([char(), char()]) |> run("a", :text) ==
                {
                  :error,
-                 %ParseResult.Error{
+                 %Result.Error{
                    code: :no_more_chars,
                    message: "No more chars @(1L:2C)",
-                   cursor: %ParseResult.Text.Cursor{line: 1, column: 2}
+                   cursor: %Result.Text.Cursor{line: 1, column: 2}
                  }
                }
     end
@@ -89,7 +90,7 @@ defmodule Combinators.Control.Test do
                |> run(input, :text) ==
                  {
                    :ok,
-                   %ParseResult.Ok{
+                   %Result.Ok{
                      parsed: %{
                        :char1 => first,
                        :char2 => middle,
@@ -117,7 +118,7 @@ defmodule Combinators.Control.Test do
                |> run(input, :text) ==
                  {
                    :ok,
-                   %ParseResult.Ok{
+                   %Result.Ok{
                      parsed: %{
                        :char1 => first,
                        :char3 => last
@@ -156,10 +157,10 @@ defmodule Combinators.Control.Test do
              |> run("a", :text) ==
                {
                  :error,
-                 %ParseResult.Error{
+                 %Result.Error{
                    code: :no_more_chars,
                    message: "No more chars @(1L:2C)",
-                   cursor: %ParseResult.Text.Cursor{line: 1, column: 2}
+                   cursor: %Result.Text.Cursor{line: 1, column: 2}
                  }
                }
     end
@@ -179,7 +180,7 @@ defmodule Combinators.Control.Test do
         assert Combinators.Control.map(parser, fn [_f, m, _l] -> m end) |> run(input, :text) ==
                  {
                    :ok,
-                   %ParseResult.Ok{
+                   %Result.Ok{
                      parsed: middle,
                      remaining: remaining,
                      cursor: calculate_text_cursor(seq)
@@ -203,7 +204,7 @@ defmodule Combinators.Control.Test do
 
         assert Combinators.Control.map(parser, fn [_f, m, _l] -> m end) |> run(input, :text) ==
                  {:error,
-                  %ParseResult.Error{
+                  %Result.Error{
                     code: :unexpected_char,
                     parsed: not_middle,
                     message:
@@ -246,7 +247,7 @@ defmodule Combinators.Control.Test do
         assert either(alt) |> run(input, :text) ==
                  {
                    :ok,
-                   %ParseResult.Ok{
+                   %Result.Ok{
                      parsed: chr,
                      remaining: remaining,
                      cursor: calculate_text_cursor(to_string([chr]))
@@ -259,10 +260,10 @@ defmodule Combinators.Control.Test do
       assert either([char_is(?a), char_is(?b)]) |> run("z", :text) ==
                {
                  :error,
-                 %ParseResult.Error{
+                 %Result.Error{
                    code: :all_parsers_failed,
                    message: "All parsers failed from @(1L:1C)",
-                   cursor: %ParseResult.Text.Cursor{}
+                   cursor: %Result.Text.Cursor{}
                  }
                }
     end
@@ -271,10 +272,10 @@ defmodule Combinators.Control.Test do
       assert either([char(), char()]) |> run("", :text) ==
                {
                  :error,
-                 %ParseResult.Error{
+                 %Result.Error{
                    code: :all_parsers_failed,
                    message: "All parsers failed from @(1L:1C)",
-                   cursor: %ParseResult.Text.Cursor{}
+                   cursor: %Result.Text.Cursor{}
                  }
                }
     end
@@ -291,7 +292,7 @@ defmodule Combinators.Control.Test do
         assert surrounded(char(), char_is(middle), char()) |> run(input, :text) ==
                  {
                    :ok,
-                   %ParseResult.Ok{
+                   %Result.Ok{
                      parsed: middle,
                      remaining: remaining,
                      cursor: calculate_text_cursor(seq)
@@ -304,10 +305,10 @@ defmodule Combinators.Control.Test do
       assert surrounded(char(), char(), char()) |> run("", :text) ==
                {
                  :error,
-                 %ParseResult.Error{
+                 %Result.Error{
                    code: :no_more_chars,
                    message: "No more chars @(1L:1C)",
-                   cursor: %ParseResult.Text.Cursor{}
+                   cursor: %Result.Text.Cursor{}
                  }
                }
     end
@@ -323,7 +324,7 @@ defmodule Combinators.Control.Test do
         assert maybe(char_is(chr)) |> run(input, :text) ==
                  {
                    :ok,
-                   %ParseResult.Ok{
+                   %Result.Ok{
                      parsed: chr,
                      remaining: remaining,
                      cursor: calculate_text_cursor(to_string([chr]))
@@ -342,10 +343,10 @@ defmodule Combinators.Control.Test do
         assert maybe(char_is(other_chr)) |> run(input, :text) ==
                  {
                    :ok,
-                   %ParseResult.Ok{
+                   %Result.Ok{
                      parsed: nil,
                      remaining: input,
-                     cursor: %ParseResult.Text.Cursor{}
+                     cursor: %Result.Text.Cursor{}
                    }
                  }
       end
@@ -355,10 +356,10 @@ defmodule Combinators.Control.Test do
       assert maybe(char()) |> run("", :text) ==
                {
                  :error,
-                 %ParseResult.Error{
+                 %Result.Error{
                    code: :no_more_chars,
                    message: "No more chars @(1L:1C)",
-                   cursor: %ParseResult.Text.Cursor{}
+                   cursor: %Result.Text.Cursor{}
                  }
                }
     end
@@ -377,7 +378,7 @@ defmodule Combinators.Control.Test do
         assert repeat(char_is(chr)) |> run(input, :text) ==
                  {
                    :ok,
-                   %ParseResult.Ok{
+                   %Result.Ok{
                      parsed: String.to_charlist(seq),
                      remaining: to_string([other_chr]) <> remaining,
                      cursor: calculate_text_cursor(seq)
@@ -399,7 +400,7 @@ defmodule Combinators.Control.Test do
         assert repeat(char_is(chr), {at_least, up_to}) |> run(input, :text) ==
                  {
                    :ok,
-                   %ParseResult.Ok{
+                   %Result.Ok{
                      parsed: String.to_charlist(seq),
                      remaining: to_string([other_chr]) <> remaining,
                      cursor: calculate_text_cursor(seq)
@@ -421,7 +422,7 @@ defmodule Combinators.Control.Test do
         assert repeat(char_is(chr), {at_least, up_to}) |> run(input, :text) ==
                  {
                    :error,
-                   %ParseResult.Error{
+                   %Result.Error{
                      code: :min_bound_not_met,
                      message: "Did not repeat at least #{at_least} times",
                      cursor: calculate_text_cursor(seq)
@@ -442,7 +443,7 @@ defmodule Combinators.Control.Test do
         assert repeat(char_is(chr), {at_least, up_to}) |> run(input, :text) ==
                  {
                    :ok,
-                   %ParseResult.Ok{
+                   %Result.Ok{
                      parsed: String.to_charlist(seq),
                      remaining: to_string([chr]) <> remaining,
                      cursor: calculate_text_cursor(seq)
@@ -461,10 +462,10 @@ defmodule Combinators.Control.Test do
         assert repeat(char_is(other_chr)) |> run(input, :text) ==
                  {
                    :ok,
-                   %ParseResult.Ok{
+                   %Result.Ok{
                      parsed: [],
                      remaining: input,
-                     cursor: %ParseResult.Text.Cursor{}
+                     cursor: %Result.Text.Cursor{}
                    }
                  }
       end
@@ -474,10 +475,10 @@ defmodule Combinators.Control.Test do
       assert repeat(char()) |> run("", :text) ==
                {
                  :ok,
-                 %ParseResult.Ok{
+                 %Result.Ok{
                    parsed: [],
                    remaining: "",
-                   cursor: %ParseResult.Text.Cursor{}
+                   cursor: %Result.Text.Cursor{}
                  }
                }
     end
@@ -497,7 +498,7 @@ defmodule Combinators.Control.Test do
                |> run(input, :text) ==
                  {
                    :ok,
-                   %ParseResult.Ok{
+                   %Result.Ok{
                      parsed: String.to_charlist(seq),
                      remaining: to_string([other_chr]) <> remaining,
                      cursor: calculate_text_cursor(seq)
@@ -510,10 +511,10 @@ defmodule Combinators.Control.Test do
       assert repeat_until(char_is(?a), char_is(?b)) |> run("", :text) ==
                {
                  :ok,
-                 %ParseResult.Ok{
+                 %Result.Ok{
                    parsed: [],
                    remaining: "",
-                   cursor: %ParseResult.Text.Cursor{}
+                   cursor: %Result.Text.Cursor{}
                  }
                }
     end
