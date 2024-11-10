@@ -17,6 +17,7 @@ defmodule Combinators.Control.Test do
   import Combinators.Control,
     only: [
       either: 1,
+      maybe: 1,
       sequence: 1,
       surrounded: 3,
       tagged_sequence: 1
@@ -297,6 +298,57 @@ defmodule Combinators.Control.Test do
 
     test "errors when not enough input" do
       assert surrounded(char(), char(), char()) |> run("") ==
+               {
+                 :error,
+                 %ParseResult.Error{
+                   code: :no_more_chars,
+                   message: "No more chars @(1L:1C)",
+                   cursor: %ParseResult.Text.Cursor{}
+                 }
+               }
+    end
+  end
+
+  describe "maybe/1" do
+    property "parses from input" do
+      ExUnitProperties.check all(
+                               chr <- chr_gen(),
+                               remaining <- str_gen(),
+                               input = to_string([chr]) <> remaining
+                             ) do
+        assert maybe(char_is(chr)) |> run(input) ==
+                 {
+                   :ok,
+                   %ParseResult.Ok{
+                     parsed: chr,
+                     remaining: remaining,
+                     cursor: calculate_text_cursor(to_string([chr]))
+                   }
+                 }
+      end
+    end
+
+    property "returns nil parsed value when parser fails" do
+      ExUnitProperties.check all(
+                               {chr, other_chr} <- {chr_gen(), chr_gen()},
+                               chr != other_chr,
+                               remaining <- str_gen(),
+                               input = to_string([chr]) <> remaining
+                             ) do
+        assert maybe(char_is(other_chr)) |> run(input) ==
+                 {
+                   :ok,
+                   %ParseResult.Ok{
+                     parsed: nil,
+                     remaining: input,
+                     cursor: %ParseResult.Text.Cursor{}
+                   }
+                 }
+      end
+    end
+
+    test "errors when no more input" do
+      assert maybe(char()) |> run("") ==
                {
                  :error,
                  %ParseResult.Error{

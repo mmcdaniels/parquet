@@ -138,4 +138,33 @@ defmodule Combinators.Control do
     ])
     |> map(fn [_, value, _] -> value end)
   end
+
+  @doc """
+  Tries to parse using the given parser.
+
+  If the parser fails because the end of input was reached, then returns an error.
+  If the parser fails for other reasons, then returns an Ok ParseResult with a nil parsed value.
+  Otherwise, returns the parser output.
+  """
+  def maybe(parser) do
+    fn input, cursor ->
+      case parser.(input, cursor) do
+        {:error, %ParseResult.Error{code: :no_more_chars} = err} ->
+          {:error, err}
+
+        {:error, _} ->
+          {
+            :ok,
+            %ParseResult.Ok{
+              parsed: nil,
+              remaining: input,
+              cursor: cursor
+            }
+          }
+
+        {:ok, _} = ok ->
+          ok
+      end
+    end
+  end
 end
