@@ -25,6 +25,15 @@ defmodule Combinators.Control do
     end
   end
 
+  @doc """
+  Executes a list of parsers in order, optionally tagging the output of each parser.
+
+  Accepts a list of tuples of the form {<tag>, <parser>}, where <tag> is an atom. If <tag>
+  is `nil`, the output is ignored. The parsed value at the end of the sequence is a map containing
+  all the tagged values.
+
+  Failure of any individual parser triggers a failure of the sequence.
+  """
   def tagged_sequence(tagged_parsers, parsed_map \\ %{}) do
     fn input, cursor ->
       case tagged_parsers do
