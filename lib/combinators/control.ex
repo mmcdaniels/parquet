@@ -1,4 +1,8 @@
 defmodule Combinators.Control do
+  @moduledoc """
+  Combinators that operate on other combinators.
+  """
+
   @doc """
   Executes a list of parsers in order.
 
