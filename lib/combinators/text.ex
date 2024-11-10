@@ -39,4 +39,50 @@ defmodule Combinators.Text do
       end
     end
   end
+
+  @doc """
+  Parses a character from the input if it matches `chr`.
+  """
+  def char_is(chr) do
+    fn input, cursor ->
+      with {:error, %ParseResult.Error{code: :predicate_not_satisfied, parsed: parsed}} <-
+             char_is_base(chr, false).(input, cursor) do
+        {
+          :error,
+          %ParseResult.Error{
+            code: :unexpected_char,
+            message:
+              "#{cursor} Expected `#{to_string([chr])}` but found `#{to_string([parsed])}`.",
+            parsed: parsed,
+            cursor: cursor
+          }
+        }
+      end
+    end
+  end
+
+  @doc """
+  Parses a character from the input if it doesn't match `chr`.
+  """
+  def char_is_not(chr) do
+    fn input, cursor ->
+      with {:error, %ParseResult.Error{code: :predicate_not_satisfied, parsed: parsed}} <-
+             char_is_base(chr, true).(input, cursor) do
+        {
+          :error,
+          %ParseResult.Error{
+            code: :unexpected_char,
+            message: "#{cursor} Found `#{to_string([chr])}`.",
+            parsed: parsed,
+            cursor: cursor
+          }
+        }
+      end
+    end
+  end
+
+  defp char_is_base(expected, invert) do
+    check(char(), fn c -> c == expected end, invert: invert)
+  end
+
 end
