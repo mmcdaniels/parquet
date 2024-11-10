@@ -167,4 +167,57 @@ defmodule Combinators.Control do
       end
     end
   end
+
+  @doc """
+  Repeats the given parser.
+
+  If no bounds are given, then repeats the parser until it fails and then returns the successful repeats.
+  If any of the bounds are set to nil, then those bounds are ignored.
+  If the atleast bound is given, then errors if the # of repetitions is less than the bound.
+  If the upto bound is given, then repeats no more than the bound.
+  """
+  def repeat(parser, {at_least, up_to} = bounds \\ {nil, nil}, parsed_list_rev \\ []) do
+    fn input, cursor ->
+      if length(parsed_list_rev) >= up_to do
+        {
+          :ok,
+          %ParseResult.Ok{
+            parsed: Enum.reverse(parsed_list_rev),
+            remaining: input,
+            cursor: cursor
+          }
+        }
+      else
+        case parser.(input, cursor) do
+          {:ok,
+           %ParseResult.Ok{
+             parsed: parsed,
+             remaining: remaining,
+             cursor: cursor
+           }} ->
+            parsed_list_rev = [parsed | parsed_list_rev]
+            repeat(parser, bounds, parsed_list_rev).(remaining, cursor)
+
+          {:error, _err} ->
+            if is_nil(at_least) or length(parsed_list_rev) >= at_least do
+              {
+                :ok,
+                %ParseResult.Ok{
+                  parsed: Enum.reverse(parsed_list_rev),
+                  remaining: input,
+                  cursor: cursor
+                }
+              }
+            else
+              {:error,
+               %ParseResult.Error{
+                 code: :min_bound_not_met,
+                 message: "Did not repeat at least #{at_least} times",
+                 cursor: cursor
+               }}
+            end
+        end
+      end
+    end
+  end
 end

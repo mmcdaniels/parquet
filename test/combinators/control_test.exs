@@ -18,6 +18,8 @@ defmodule Combinators.Control.Test do
     only: [
       either: 1,
       maybe: 1,
+      repeat: 1,
+      repeat: 2,
       sequence: 1,
       surrounded: 3,
       tagged_sequence: 1
@@ -354,6 +356,125 @@ defmodule Combinators.Control.Test do
                  %ParseResult.Error{
                    code: :no_more_chars,
                    message: "No more chars @(1L:1C)",
+                   cursor: %ParseResult.Text.Cursor{}
+                 }
+               }
+    end
+  end
+
+  describe "repeat/1 & repeat/2" do
+    property "parses repeatedly from input without bounds" do
+      ExUnitProperties.check all(
+                               {chr, other_chr} <- {chr_gen(), chr_gen()},
+                               chr != other_chr,
+                               remaining <- str_gen(),
+                               n <- StreamData.positive_integer(),
+                               seq = String.duplicate(to_string([chr]), n),
+                               input = seq <> to_string([other_chr]) <> remaining
+                             ) do
+        assert repeat(char_is(chr)) |> run(input) ==
+                 {
+                   :ok,
+                   %ParseResult.Ok{
+                     parsed: String.to_charlist(seq),
+                     remaining: to_string([other_chr]) <> remaining,
+                     cursor: calculate_text_cursor(seq)
+                   }
+                 }
+      end
+    end
+
+    property "parses repeatedly from input with exact bounds" do
+      ExUnitProperties.check all(
+                               {chr, other_chr} <- {chr_gen(), chr_gen()},
+                               chr != other_chr,
+                               remaining <- str_gen(),
+                               n <- StreamData.positive_integer(),
+                               seq = String.duplicate(to_string([chr]), n),
+                               {at_least, up_to} = {n, n},
+                               input = seq <> to_string([other_chr]) <> remaining
+                             ) do
+        assert repeat(char_is(chr), {at_least, up_to}) |> run(input) ==
+                 {
+                   :ok,
+                   %ParseResult.Ok{
+                     parsed: String.to_charlist(seq),
+                     remaining: to_string([other_chr]) <> remaining,
+                     cursor: calculate_text_cursor(seq)
+                   }
+                 }
+      end
+    end
+
+    property "errors when lower bound is not met" do
+      ExUnitProperties.check all(
+                               {chr, other_chr} <- {chr_gen(), chr_gen()},
+                               chr != other_chr,
+                               remaining <- str_gen(),
+                               n <- StreamData.positive_integer(),
+                               seq = String.duplicate(to_string([chr]), n),
+                               {at_least, up_to} = {n + 1, nil},
+                               input = seq <> to_string([other_chr]) <> remaining
+                             ) do
+        assert repeat(char_is(chr), {at_least, up_to}) |> run(input) ==
+                 {
+                   :error,
+                   %ParseResult.Error{
+                     code: :min_bound_not_met,
+                     message: "Did not repeat at least #{at_least} times",
+                     cursor: calculate_text_cursor(seq)
+                   }
+                 }
+      end
+    end
+
+    property "parses up to upper bound, even when more repeats are possible" do
+      ExUnitProperties.check all(
+                               chr <- chr_gen(),
+                               remaining <- str_gen(),
+                               n <- StreamData.positive_integer(),
+                               seq = String.duplicate(to_string([chr]), n),
+                               {at_least, up_to} = {nil, n},
+                               input = seq <> to_string([chr]) <> remaining
+                             ) do
+        assert repeat(char_is(chr), {at_least, up_to}) |> run(input) ==
+                 {
+                   :ok,
+                   %ParseResult.Ok{
+                     parsed: String.to_charlist(seq),
+                     remaining: to_string([chr]) <> remaining,
+                     cursor: calculate_text_cursor(seq)
+                   }
+                 }
+      end
+    end
+
+    property "returns empty list when there are 0 repeats" do
+      ExUnitProperties.check all(
+                               {chr, other_chr} <- {chr_gen(), chr_gen()},
+                               chr != other_chr,
+                               remaining <- str_gen(),
+                               input = to_string([chr]) <> remaining
+                             ) do
+        assert repeat(char_is(other_chr)) |> run(input) ==
+                 {
+                   :ok,
+                   %ParseResult.Ok{
+                     parsed: [],
+                     remaining: input,
+                     cursor: %ParseResult.Text.Cursor{}
+                   }
+                 }
+      end
+    end
+
+    test "returns empty list when end of input reached" do
+      assert repeat(char()) |> run("") ==
+               {
+                 :ok,
+                 %ParseResult.Ok{
+                   parsed: [],
+                   remaining: "",
                    cursor: %ParseResult.Text.Cursor{}
                  }
                }
