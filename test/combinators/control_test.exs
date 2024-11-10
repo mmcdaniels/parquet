@@ -157,4 +157,71 @@ defmodule Combinators.Control.Test do
                }
     end
   end
+
+  describe "map/2" do
+    property "maps parsed input" do
+      ExUnitProperties.check all(
+                               {first, middle, last} <- {chr_gen(), chr_gen(), chr_gen()},
+                               remaining <- str_gen(),
+                               seq =
+                                 to_string([first]) <> to_string([middle]) <> to_string([last]),
+                               input = seq <> remaining
+                             ) do
+        parser = sequence([char(), char_is(middle), char()])
+
+        assert Combinators.Control.map(parser, fn [_f, m, _l] -> m end) |> run(input) ==
+                 {
+                   :ok,
+                   %ParseResult.Ok{
+                     parsed: middle,
+                     remaining: remaining,
+                     cursor: calculate_text_cursor(seq)
+                   }
+                 }
+      end
+    end
+
+    property "passes through underlying parser error" do
+      ExUnitProperties.check all(
+                               {first, middle, last, not_middle} <-
+                                 {chr_gen(), chr_gen(), chr_gen(), chr_gen()},
+                               not_middle != middle,
+                               remaining <- str_gen(),
+                               seq =
+                                 to_string([first]) <>
+                                   to_string([not_middle]) <> to_string([last]),
+                               input = seq <> remaining
+                             ) do
+        parser = sequence([char(), char_is(middle), char()])
+
+        assert Combinators.Control.map(parser, fn [_f, m, _l] -> m end) |> run(input) ==
+                 {:error,
+                  %ParseResult.Error{
+                    code: :unexpected_char,
+                    parsed: not_middle,
+                    message:
+                      "@(1L:2C) Expected `#{to_string([middle])}` but found `#{to_string([not_middle])}`.",
+                    cursor: calculate_text_cursor(to_string([first]))
+                  }}
+      end
+    end
+
+    property "errors if the mapper function raises an exception" do
+      ExUnitProperties.check all(
+                               {first, middle, last} <- {chr_gen(), chr_gen(), chr_gen()},
+                               remaining <- str_gen(),
+                               seq =
+                                 to_string([first]) <> to_string([middle]) <> to_string([last]),
+                               input = seq <> remaining
+                             ) do
+        parser = sequence([char(), char_is(middle), char()])
+
+        assert Combinators.Control.map(parser, fn [_f, _m, _l] ->
+                 raise "Something bad happened here"
+               end)
+               |> run(input) ==
+                 {:error, :mapper_error, "Something bad happened here"}
+      end
+    end
+  end
 end

@@ -69,4 +69,23 @@ defmodule Combinators.Control do
       end
     end
   end
+
+  @doc """
+  Applies the given function to the parsed value and returns the updated ParseResult.
+
+  Exceptions in the mapper function are caught and returned as an error tuple.
+  """
+  def map(parser, mapper) do
+    fn input, cursor ->
+      with {:ok, %ParseResult.Ok{parsed: parsed} = ok} <- parser.(input, cursor) do
+        try do
+          mapped = mapper.(parsed)
+          {:ok, %ParseResult.Ok{ok | parsed: mapped}}
+        rescue
+          # TODO provide more detail about the exception. Potentially include the stacktrace and the exception type.
+          e -> {:error, :mapper_error, Exception.message(e)}
+        end
+      end
+    end
+  end
 end
