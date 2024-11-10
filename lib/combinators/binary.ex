@@ -31,6 +31,34 @@ defmodule Combinators.Binary do
   end
 
   @doc """
+  Parses a byte from the input.
+  """
+  def byte do
+    fn input, cursor ->
+      with <<byte::size(8), remaining::bitstring>> <- input do
+        cursor = %Result.Binary.Cursor{
+          cursor
+          | position: cursor.position + 8
+        }
+
+        {:ok, %Result.Ok{parsed: <<byte::size(8)>>, remaining: remaining, cursor: cursor}}
+      else
+        _ ->
+          message = "No more bytes #{cursor}"
+
+          {
+            :error,
+            %Result.Error{
+              code: :no_more_bytes,
+              message: message,
+              cursor: cursor
+            }
+          }
+      end
+    end
+  end
+
+  @doc """
   Parses when bit is 1
   """
   def bit1, do: bit_is(<<1::size(1)>>)

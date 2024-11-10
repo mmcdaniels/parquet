@@ -31,4 +31,13 @@ defmodule Combinators.BinaryTest.Helpers do
       bitstr
     end
   end
+
+  @doc """
+  Generates a byte.
+  """
+  def byte_gen do
+    gen all(byte <- StreamData.binary(length: 1)) do
+      byte
+    end
+  end
 end

@@ -13,6 +13,7 @@ defmodule Combinators.BinaryTest do
       bit: 0,
       bit1: 0,
       bit0: 0,
+      byte: 0
     ]
 
   alias Combinators.Result
@@ -121,6 +122,38 @@ defmodule Combinators.BinaryTest do
                  %Result.Error{
                    code: :no_more_bits,
                    message: "No more bits @(1P)",
+                   cursor: %Result.Binary.Cursor{}
+                 }
+               }
+    end
+  end
+
+  describe "byte/0" do
+    property "reads byte" do
+      ExUnitProperties.check all(
+                               byte <- byte_gen(),
+                               remaining <- bitstr_gen(),
+                               input = <<byte::binary, remaining::bitstring>>
+                             ) do
+        assert Combinators.Binary.byte() |> run(input, :binary) ==
+                 {
+                   :ok,
+                   %Result.Ok{
+                     parsed: byte,
+                     remaining: remaining,
+                     cursor: calculate_binary_cursor(byte)
+                   }
+                 }
+      end
+    end
+
+    test "errors when no more bytes" do
+      assert Combinators.Binary.byte() |> run(<<1::size(7)>>, :binary) ==
+               {
+                 :error,
+                 %Result.Error{
+                   code: :no_more_bytes,
+                   message: "No more bytes @(1P)",
                    cursor: %Result.Binary.Cursor{}
                  }
                }
