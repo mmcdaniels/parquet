@@ -5,7 +5,7 @@ defmodule Combinators.Control.Test do
 
   import Combinators.Base,
     only: [
-      run: 2
+      run: 3
     ]
 
   import Combinators.Text,
@@ -35,7 +35,7 @@ defmodule Combinators.Control.Test do
                                  to_string([first]) <> to_string([middle]) <> to_string([last]),
                                input = seq <> remaining
                              ) do
-        assert sequence([char(), char_is(middle), char()]) |> run(input) ==
+        assert sequence([char(), char_is(middle), char()]) |> run(input, :text) ==
                  {
                    :ok,
                    %ParseResult.Ok{
@@ -48,7 +48,7 @@ defmodule Combinators.Control.Test do
     end
 
     test "errors when a parser fails" do
-      assert sequence([char_is(?a), char_is(?b), char_is(?z)]) |> run("abc") ==
+      assert sequence([char_is(?a), char_is(?b), char_is(?z)]) |> run("abc", :text) ==
                {
                  :error,
                  %ParseResult.Error{
@@ -61,7 +61,7 @@ defmodule Combinators.Control.Test do
     end
 
     test "errors when not enough input" do
-      assert sequence([char(), char()]) |> run("a") ==
+      assert sequence([char(), char()]) |> run("a", :text) ==
                {
                  :error,
                  %ParseResult.Error{
@@ -86,7 +86,7 @@ defmodule Combinators.Control.Test do
                  {:char2, char_is(middle)},
                  {:char3, char()}
                ])
-               |> run(input) ==
+               |> run(input, :text) ==
                  {
                    :ok,
                    %ParseResult.Ok{
@@ -114,7 +114,7 @@ defmodule Combinators.Control.Test do
                  {nil, char_is(middle)},
                  {:char3, char()}
                ])
-               |> run(input) ==
+               |> run(input, :text) ==
                  {
                    :ok,
                    %ParseResult.Ok{
@@ -130,7 +130,8 @@ defmodule Combinators.Control.Test do
     end
 
     test "errors when duplicate tag is found" do
-      assert tagged_sequence([{:char1, char()}, {:char1, char()}, {:char3, char()}]) |> run("abc") ==
+      assert tagged_sequence([{:char1, char()}, {:char1, char()}, {:char3, char()}])
+             |> run("abc", :text) ==
                {
                  :error,
                  :duplicate_tag,
@@ -139,7 +140,7 @@ defmodule Combinators.Control.Test do
     end
 
     test "errors when tag is not an atom" do
-      assert tagged_sequence([{:char1, char()}, {"char2", char()}]) |> run("ab") ==
+      assert tagged_sequence([{:char1, char()}, {"char2", char()}]) |> run("ab", :text) ==
                {
                  :error,
                  :tag_not_an_atom,
@@ -152,7 +153,7 @@ defmodule Combinators.Control.Test do
                {:char1, char()},
                {:char2, char()}
              ])
-             |> run("a") ==
+             |> run("a", :text) ==
                {
                  :error,
                  %ParseResult.Error{
@@ -175,7 +176,7 @@ defmodule Combinators.Control.Test do
                              ) do
         parser = sequence([char(), char_is(middle), char()])
 
-        assert Combinators.Control.map(parser, fn [_f, m, _l] -> m end) |> run(input) ==
+        assert Combinators.Control.map(parser, fn [_f, m, _l] -> m end) |> run(input, :text) ==
                  {
                    :ok,
                    %ParseResult.Ok{
@@ -200,7 +201,7 @@ defmodule Combinators.Control.Test do
                              ) do
         parser = sequence([char(), char_is(middle), char()])
 
-        assert Combinators.Control.map(parser, fn [_f, m, _l] -> m end) |> run(input) ==
+        assert Combinators.Control.map(parser, fn [_f, m, _l] -> m end) |> run(input, :text) ==
                  {:error,
                   %ParseResult.Error{
                     code: :unexpected_char,
@@ -225,7 +226,7 @@ defmodule Combinators.Control.Test do
         assert Combinators.Control.map(parser, fn [_f, _m, _l] ->
                  raise "Something bad happened here"
                end)
-               |> run(input) ==
+               |> run(input, :text) ==
                  {:error, :mapper_error, "Something bad happened here"}
       end
     end
@@ -242,7 +243,7 @@ defmodule Combinators.Control.Test do
         # Shuffle the order of alternatives
         alt = Enum.shuffle([char_is(chr), char_is(other_chr)])
 
-        assert either(alt) |> run(input) ==
+        assert either(alt) |> run(input, :text) ==
                  {
                    :ok,
                    %ParseResult.Ok{
@@ -255,7 +256,7 @@ defmodule Combinators.Control.Test do
     end
 
     test "errors when no parsers succeed" do
-      assert either([char_is(?a), char_is(?b)]) |> run("z") ==
+      assert either([char_is(?a), char_is(?b)]) |> run("z", :text) ==
                {
                  :error,
                  %ParseResult.Error{
@@ -267,7 +268,7 @@ defmodule Combinators.Control.Test do
     end
 
     test "errors when not enough input" do
-      assert either([char(), char()]) |> run("") ==
+      assert either([char(), char()]) |> run("", :text) ==
                {
                  :error,
                  %ParseResult.Error{
@@ -287,7 +288,7 @@ defmodule Combinators.Control.Test do
                                seq = to_string([first, middle, last]),
                                input = seq <> remaining
                              ) do
-        assert surrounded(char(), char_is(middle), char()) |> run(input) ==
+        assert surrounded(char(), char_is(middle), char()) |> run(input, :text) ==
                  {
                    :ok,
                    %ParseResult.Ok{
@@ -300,7 +301,7 @@ defmodule Combinators.Control.Test do
     end
 
     test "errors when not enough input" do
-      assert surrounded(char(), char(), char()) |> run("") ==
+      assert surrounded(char(), char(), char()) |> run("", :text) ==
                {
                  :error,
                  %ParseResult.Error{
@@ -319,7 +320,7 @@ defmodule Combinators.Control.Test do
                                remaining <- str_gen(),
                                input = to_string([chr]) <> remaining
                              ) do
-        assert maybe(char_is(chr)) |> run(input) ==
+        assert maybe(char_is(chr)) |> run(input, :text) ==
                  {
                    :ok,
                    %ParseResult.Ok{
@@ -338,7 +339,7 @@ defmodule Combinators.Control.Test do
                                remaining <- str_gen(),
                                input = to_string([chr]) <> remaining
                              ) do
-        assert maybe(char_is(other_chr)) |> run(input) ==
+        assert maybe(char_is(other_chr)) |> run(input, :text) ==
                  {
                    :ok,
                    %ParseResult.Ok{
@@ -351,7 +352,7 @@ defmodule Combinators.Control.Test do
     end
 
     test "errors when no more input" do
-      assert maybe(char()) |> run("") ==
+      assert maybe(char()) |> run("", :text) ==
                {
                  :error,
                  %ParseResult.Error{
@@ -373,7 +374,7 @@ defmodule Combinators.Control.Test do
                                seq = String.duplicate(to_string([chr]), n),
                                input = seq <> to_string([other_chr]) <> remaining
                              ) do
-        assert repeat(char_is(chr)) |> run(input) ==
+        assert repeat(char_is(chr)) |> run(input, :text) ==
                  {
                    :ok,
                    %ParseResult.Ok{
@@ -395,7 +396,7 @@ defmodule Combinators.Control.Test do
                                {at_least, up_to} = {n, n},
                                input = seq <> to_string([other_chr]) <> remaining
                              ) do
-        assert repeat(char_is(chr), {at_least, up_to}) |> run(input) ==
+        assert repeat(char_is(chr), {at_least, up_to}) |> run(input, :text) ==
                  {
                    :ok,
                    %ParseResult.Ok{
@@ -417,7 +418,7 @@ defmodule Combinators.Control.Test do
                                {at_least, up_to} = {n + 1, nil},
                                input = seq <> to_string([other_chr]) <> remaining
                              ) do
-        assert repeat(char_is(chr), {at_least, up_to}) |> run(input) ==
+        assert repeat(char_is(chr), {at_least, up_to}) |> run(input, :text) ==
                  {
                    :error,
                    %ParseResult.Error{
@@ -438,7 +439,7 @@ defmodule Combinators.Control.Test do
                                {at_least, up_to} = {nil, n},
                                input = seq <> to_string([chr]) <> remaining
                              ) do
-        assert repeat(char_is(chr), {at_least, up_to}) |> run(input) ==
+        assert repeat(char_is(chr), {at_least, up_to}) |> run(input, :text) ==
                  {
                    :ok,
                    %ParseResult.Ok{
@@ -457,7 +458,7 @@ defmodule Combinators.Control.Test do
                                remaining <- str_gen(),
                                input = to_string([chr]) <> remaining
                              ) do
-        assert repeat(char_is(other_chr)) |> run(input) ==
+        assert repeat(char_is(other_chr)) |> run(input, :text) ==
                  {
                    :ok,
                    %ParseResult.Ok{
@@ -470,7 +471,7 @@ defmodule Combinators.Control.Test do
     end
 
     test "returns empty list when end of input reached" do
-      assert repeat(char()) |> run("") ==
+      assert repeat(char()) |> run("", :text) ==
                {
                  :ok,
                  %ParseResult.Ok{
@@ -493,7 +494,7 @@ defmodule Combinators.Control.Test do
                                input = seq <> to_string([other_chr]) <> remaining
                              ) do
         assert repeat_until(char_is(chr), char_is(other_chr))
-               |> run(input) ==
+               |> run(input, :text) ==
                  {
                    :ok,
                    %ParseResult.Ok{
@@ -506,7 +507,7 @@ defmodule Combinators.Control.Test do
     end
 
     test "returns empty list with end of input" do
-      assert repeat_until(char_is(?a), char_is(?b)) |> run("") ==
+      assert repeat_until(char_is(?a), char_is(?b)) |> run("", :text) ==
                {
                  :ok,
                  %ParseResult.Ok{

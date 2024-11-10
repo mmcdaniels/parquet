@@ -5,7 +5,8 @@ defmodule Combinators.Base do
   The initial cursor represents the starting position of the input stream. Parsers update this position
   after running and report it in the case of a parser error.
   """
-  def run(parser, input), do: parser.(input, %ParseResult.Text.Cursor{})
+  def run(parser, input, :text), do: parser.(input, %ParseResult.Text.Cursor{})
+  def run(parser, input, :binary), do: parser.(input, %ParseResult.Binary.Cursor{})
 
   @doc """
     Takes the parsed output of `parser` and passes it to the predicate function.

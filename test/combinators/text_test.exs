@@ -5,7 +5,7 @@ defmodule Combinators.TextTest do
 
   import Combinators.Base,
     only: [
-      run: 2
+      run: 3
     ]
 
   import Combinators.Text,
@@ -23,7 +23,7 @@ defmodule Combinators.TextTest do
                                remaining <- str_gen(),
                                input = to_string([chr]) <> remaining
                              ) do
-        assert char() |> run(input) ==
+        assert char() |> run(input, :text) ==
                  {
                    :ok,
                    %ParseResult.Ok{
@@ -40,7 +40,7 @@ defmodule Combinators.TextTest do
                                remaining <- str_gen(),
                                input = to_string([?\n]) <> remaining
                              ) do
-        assert char() |> run(input) ==
+        assert char() |> run(input, :text) ==
                  {
                    :ok,
                    %ParseResult.Ok{
@@ -53,7 +53,7 @@ defmodule Combinators.TextTest do
     end
 
     test "errors when no more chars" do
-      assert char() |> run("") ==
+      assert char() |> run("", :text) ==
                {
                  :error,
                  %ParseResult.Error{
@@ -72,7 +72,7 @@ defmodule Combinators.TextTest do
                                remaining <- str_gen(),
                                input = to_string([expected]) <> remaining
                              ) do
-        assert char_is(expected) |> run(input) ==
+        assert char_is(expected) |> run(input, :text) ==
                  {
                    :ok,
                    %ParseResult.Ok{
@@ -94,7 +94,7 @@ defmodule Combinators.TextTest do
                              ) do
         cursor = %ParseResult.Text.Cursor{}
 
-        assert char_is(expected) |> run(input) ==
+        assert char_is(expected) |> run(input, :text) ==
                  {
                    :error,
                    %ParseResult.Error{
@@ -110,7 +110,7 @@ defmodule Combinators.TextTest do
 
     property "errors when no more chars" do
       ExUnitProperties.check all(chr <- chr_gen()) do
-        assert char_is(chr) |> run("") ==
+        assert char_is(chr) |> run("", :text) ==
                  {
                    :error,
                    %ParseResult.Error{
@@ -132,7 +132,7 @@ defmodule Combinators.TextTest do
                                remaining <- str_gen(),
                                input = to_string([chr]) <> remaining
                              ) do
-        assert char_is_not(unexpected) |> run(input) ==
+        assert char_is_not(unexpected) |> run(input, :text) ==
                  {
                    :ok,
                    %ParseResult.Ok{
@@ -154,7 +154,7 @@ defmodule Combinators.TextTest do
                              ) do
         cursor = %ParseResult.Text.Cursor{}
 
-        assert char_is_not(unexpected) |> run(input) ==
+        assert char_is_not(unexpected) |> run(input, :text) ==
                  {
                    :error,
                    %ParseResult.Error{
@@ -169,7 +169,7 @@ defmodule Combinators.TextTest do
 
     property "errors when no more chars" do
       ExUnitProperties.check all(chr <- chr_gen()) do
-        assert char_is_not(chr) |> run("") ==
+        assert char_is_not(chr) |> run("", :text) ==
                  {
                    :error,
                    %ParseResult.Error{
@@ -189,7 +189,7 @@ defmodule Combinators.TextTest do
                                remaining <- str_gen(),
                                input = expected <> remaining
                              ) do
-        assert string_is(expected) |> run(input) ==
+        assert string_is(expected) |> run(input, :text) ==
                  {
                    :ok,
                    %ParseResult.Ok{
@@ -215,7 +215,7 @@ defmodule Combinators.TextTest do
                              ) do
         cursor = calculate_text_cursor(common_prefix)
 
-        assert string_is(expected) |> run(input) ==
+        assert string_is(expected) |> run(input, :text) ==
                  {
                    :error,
                    %ParseResult.Error{
@@ -233,7 +233,7 @@ defmodule Combinators.TextTest do
                                str <- str_gen(),
                                str != ""
                              ) do
-        assert string_is(str) |> run("") ==
+        assert string_is(str) |> run("", :text) ==
                  {
                    :error,
                    %ParseResult.Error{
