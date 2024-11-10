@@ -13,6 +13,7 @@ defmodule Combinators.TextTest do
       char: 0,
       char_is: 1,
       char_is_not: 1,
+      string_is: 1
     ]
 
   describe "char/0" do
@@ -181,4 +182,67 @@ defmodule Combinators.TextTest do
     end
   end
 
+  describe "string_is/1" do
+    property("reads string when expected string") do
+      ExUnitProperties.check all(
+                               expected <- str_gen(),
+                               remaining <- str_gen(),
+                               input = expected <> remaining
+                             ) do
+        assert string_is(expected) |> run(input) ==
+                 {
+                   :ok,
+                   %ParseResult.Ok{
+                     parsed: expected,
+                     remaining: remaining,
+                     cursor: calculate_text_cursor(expected)
+                   }
+                 }
+      end
+    end
+
+    property("errors when not expected string, early return after unexpected char") do
+      ExUnitProperties.check all(
+                               n <- StreamData.positive_integer(),
+                               common_prefix <- str_len_gen(n),
+                               expected_chr <- chr_gen(),
+                               actual_chr <- chr_gen(),
+                               expected_chr != actual_chr,
+                               expected = common_prefix <> to_string([expected_chr]),
+                               actual = common_prefix <> to_string([actual_chr]),
+                               remaining <- str_gen(),
+                               input = actual <> remaining
+                             ) do
+        cursor = calculate_text_cursor(common_prefix)
+
+        assert string_is(expected) |> run(input) ==
+                 {
+                   :error,
+                   %ParseResult.Error{
+                     code: :unexpected_string,
+                     message: "#{cursor} Expected `#{expected}` but found `#{actual}`.",
+                     parsed: actual,
+                     cursor: cursor
+                   }
+                 }
+      end
+    end
+
+    property "errors when no more chars" do
+      ExUnitProperties.check all(
+                               str <- str_gen(),
+                               str != ""
+                             ) do
+        assert string_is(str) |> run("") ==
+                 {
+                   :error,
+                   %ParseResult.Error{
+                     code: :no_more_chars,
+                     message: "No more chars @(1L:1C)",
+                     cursor: %ParseResult.Text.Cursor{}
+                   }
+                 }
+      end
+    end
+  end
 end

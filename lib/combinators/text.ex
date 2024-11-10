@@ -85,4 +85,46 @@ defmodule Combinators.Text do
     check(char(), fn c -> c == expected end, invert: invert)
   end
 
+  @doc """
+  Parses a string from the input if it matches `str`.
+  """
+  def string_is(str, acc \\ []) do
+    fn input, cursor ->
+      case str do
+        "" ->
+          {
+            :ok,
+            %ParseResult.Ok{
+              :parsed => to_string(Enum.reverse(acc)),
+              :remaining => input,
+              :cursor => cursor
+            }
+          }
+
+        <<ch::utf8, rest::binary>> ->
+          with {:ok, %ParseResult.Ok{parsed: parsed, remaining: remaining, cursor: cursor}} <-
+                 char_is(ch).(input, cursor) do
+            string_is(rest, [parsed | acc]).(remaining, cursor)
+          else
+            {:error, %ParseResult.Error{code: :unexpected_char, parsed: parsed_char}} ->
+              parsed_string = to_string(Enum.reverse([parsed_char | acc]))
+              expected_string = to_string(Enum.reverse([ch | acc]))
+
+              {
+                :error,
+                %ParseResult.Error{
+                  code: :unexpected_string,
+                  message:
+                    "#{cursor} Expected `#{expected_string}` but found `#{parsed_string}`.",
+                  parsed: parsed_string,
+                  cursor: cursor
+                }
+              }
+
+            {:error, err} ->
+              {:error, err}
+          end
+      end
+    end
+  end
 end
