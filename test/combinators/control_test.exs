@@ -20,6 +20,7 @@ defmodule Combinators.Control.Test do
       maybe: 1,
       repeat: 1,
       repeat: 2,
+      repeat_until: 2,
       sequence: 1,
       surrounded: 3,
       tagged_sequence: 1
@@ -470,6 +471,42 @@ defmodule Combinators.Control.Test do
 
     test "returns empty list when end of input reached" do
       assert repeat(char()) |> run("") ==
+               {
+                 :ok,
+                 %ParseResult.Ok{
+                   parsed: [],
+                   remaining: "",
+                   cursor: %ParseResult.Text.Cursor{}
+                 }
+               }
+    end
+  end
+
+  describe "repeat_until/2" do
+    property "parses repeatedly from input until condition is met" do
+      ExUnitProperties.check all(
+                               {chr, other_chr} <- {chr_gen(), chr_gen()},
+                               chr != other_chr,
+                               remaining <- str_gen(),
+                               n <- StreamData.positive_integer(),
+                               seq = String.duplicate(to_string([chr]), n),
+                               input = seq <> to_string([other_chr]) <> remaining
+                             ) do
+        assert repeat_until(char_is(chr), char_is(other_chr))
+               |> run(input) ==
+                 {
+                   :ok,
+                   %ParseResult.Ok{
+                     parsed: String.to_charlist(seq),
+                     remaining: to_string([other_chr]) <> remaining,
+                     cursor: calculate_text_cursor(seq)
+                   }
+                 }
+      end
+    end
+
+    test "returns empty list with end of input" do
+      assert repeat_until(char_is(?a), char_is(?b)) |> run("") ==
                {
                  :ok,
                  %ParseResult.Ok{

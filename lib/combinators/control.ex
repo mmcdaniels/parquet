@@ -220,4 +220,42 @@ defmodule Combinators.Control do
       end
     end
   end
+
+  @doc """
+  Repeatedly parses with `repeat_parser` until `until_parser `succeeds.
+
+  When `until_parser` succeeds, its parsed output is not consumed.
+  """
+  def repeat_until(repeat_parser, until_parser, parsed_list_rev \\ []) do
+    fn input, cursor ->
+      case until_parser.(input, cursor) do
+        {:error, _} ->
+          case repeat_parser.(input, cursor) do
+            {:ok, %ParseResult.Ok{parsed: parsed, remaining: remaining, cursor: cursor}} ->
+              parsed_list_rev = [parsed | parsed_list_rev]
+              repeat_until(repeat_parser, until_parser, parsed_list_rev).(remaining, cursor)
+
+            {:error, _} ->
+              {
+                :ok,
+                %ParseResult.Ok{
+                  parsed: Enum.reverse(parsed_list_rev),
+                  remaining: input,
+                  cursor: cursor
+                }
+              }
+          end
+
+        {:ok, _} ->
+          {
+            :ok,
+            %ParseResult.Ok{
+              parsed: Enum.reverse(parsed_list_rev),
+              remaining: input,
+              cursor: cursor
+            }
+          }
+      end
+    end
+  end
 end
