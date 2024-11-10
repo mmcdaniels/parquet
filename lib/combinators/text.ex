@@ -87,6 +87,31 @@ defmodule Combinators.Text do
   end
 
   @doc """
+  Parses a character from the input if it is within the given character range.
+  """
+  def char_in(range) do
+    fn input, cursor ->
+      with {:error, %Result.Error{code: :predicate_not_satisfied, parsed: parsed}} <-
+             char_in_base(range, false).(input, cursor) do
+        {
+          :error,
+          %Result.Error{
+            code: :unexpected_char,
+            message:
+              "#{cursor} Found `#{to_string([parsed])}`, which is outside the target range.",
+            parsed: parsed,
+            cursor: cursor
+          }
+        }
+      end
+    end
+  end
+
+  defp char_in_base(range, invert) do
+    check(char(), fn c -> c in range end, invert: invert)
+  end
+
+  @doc """
   Parses a string from the input if it matches `str`.
   """
   def string_is(str, acc \\ []) do

@@ -13,6 +13,7 @@ defmodule Combinators.TextTest do
       char: 0,
       char_is: 1,
       char_is_not: 1,
+      char_in: 1,
       string_is: 1
     ]
 
@@ -172,6 +173,62 @@ defmodule Combinators.TextTest do
     property "errors when no more chars" do
       ExUnitProperties.check all(chr <- chr_gen()) do
         assert char_is_not(chr) |> run("", :text) ==
+                 {
+                   :error,
+                   %Result.Error{
+                     code: :no_more_chars,
+                     message: "No more chars @(1L:1C)",
+                     cursor: %Result.Text.Cursor{}
+                   }
+                 }
+      end
+    end
+  end
+
+  describe "char_in/1" do
+    property("reads char when in expected range") do
+      ExUnitProperties.check all(
+                               expected <- chr_in_gen(?a..?z),
+                               remaining <- str_gen(),
+                               input = to_string([expected]) <> remaining
+                             ) do
+        assert char_in(?a..?z) |> run(input, :text) ==
+                 {
+                   :ok,
+                   %Result.Ok{
+                     parsed: expected,
+                     remaining: remaining,
+                     cursor: calculate_text_cursor(to_string([expected]))
+                   }
+                 }
+      end
+    end
+
+    property("errors when not in expected range") do
+      ExUnitProperties.check all(
+                               actual <- chr_in_gen(?A..?Z),
+                               remaining <- str_gen(),
+                               input = to_string([actual]) <> remaining
+                             ) do
+        cursor = %Result.Text.Cursor{}
+
+        assert char_in(?a..?z) |> run(input, :text) ==
+                 {
+                   :error,
+                   %Result.Error{
+                     code: :unexpected_char,
+                     message:
+                       "#{cursor} Found `#{to_string([actual])}`, which is outside the target range.",
+                     parsed: actual,
+                     cursor: cursor
+                   }
+                 }
+      end
+    end
+
+    property "errors when no more chars" do
+      ExUnitProperties.check all(chr <- chr_gen()) do
+        assert char_in(chr) |> run("", :text) ==
                  {
                    :error,
                    %Result.Error{
