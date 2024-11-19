@@ -118,6 +118,72 @@ defmodule Parquet.Data.Reader.SchemaTree do
             outer_tree = Map.put(outer_tree, :children, [middle_tree])
 
             {outer_tree, schema_elements, leaf_count}
+
+          :map ->
+            outer_tree = %{}
+            outer_element = schema_element
+
+            # Validate outer element
+            if outer_element.repetition_type not in [:optional, :required],
+              do: raise("Invalid repetition type for map outer element.")
+
+            if outer_element.num_children != 1,
+              do: raise("Outer element for map must have one child.")
+
+            outer_tree = Map.put(outer_tree, :name, outer_element.name)
+            outer_tree = Map.put(outer_tree, :type, normalized_type)
+            outer_tree = Map.put(outer_tree, :repetition_type, outer_element.repetition_type)
+
+            # Validate middle element
+            {middle_element, schema_elements} = pop(schema_elements)
+
+            if middle_element.repetition_type not in [:repeated],
+              do: raise("Invalid repetition type for map middle element.")
+
+            if middle_element.name != "key_value",
+              do: raise("Middle element of map type must be named `key_value`")
+
+            if middle_element.num_children not in [1, 2],
+              do:
+                raise(
+                  "key_value layer for map must have either one child (key) or two children (key, value)."
+                )
+
+            middle_tree = %{}
+            middle_tree = Map.put(middle_tree, :name, middle_element.name)
+            middle_tree = Map.put(middle_tree, :type, normalize_group_type(middle_element))
+            middle_tree = Map.put(middle_tree, :repetition_type, middle_element.repetition_type)
+
+            # Parse and validate key
+            %{repetition_type: key_repetition_type} = peek(schema_elements)
+
+            if key_repetition_type not in [:optional, :required],
+              do: raise("Invalid repetition type for map key element.")
+
+            {key_tree, schema_elements, leaf_count} =
+              build_column_tree(
+                schema_elements,
+                leaf_count
+              )
+
+            # Parse and validate value
+            {value_tree, schema_elements, leaf_count} =
+              if middle_element.num_children == 2 do
+                %{repetition_type: value_repetition_type} = peek(schema_elements)
+
+                if value_repetition_type not in [:required, :optional],
+                  do: raise("Invalid repetition type for map value element.")
+
+                build_column_tree(schema_elements, leaf_count)
+              else
+                {nil, schema_elements, leaf_count}
+              end
+
+            children = if is_nil(value_tree), do: [key_tree], else: [key_tree, value_tree]
+            middle_tree = Map.put(middle_tree, :children, children)
+            outer_tree = Map.put(outer_tree, :children, [middle_tree])
+
+            {outer_tree, schema_elements, leaf_count}
         end
 
       # leaf element
@@ -141,13 +207,16 @@ defmodule Parquet.Data.Reader.SchemaTree do
           %LogicalType.ListType{} ->
             :list
 
+          %LogicalType.MapType{} ->
+            :map
+
           logical_type ->
             raise "Unsupported logical type #{inspect(logical_type)}"
         end
 
       not is_nil(schema_element.converted_type) ->
         cond do
-          schema_element.converted_type in {:list} ->
+          schema_element.converted_type in {:list, :map} ->
             schema_element.converted_type
 
           true ->
