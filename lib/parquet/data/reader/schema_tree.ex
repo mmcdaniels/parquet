@@ -237,4 +237,61 @@ defmodule Parquet.Data.Reader.SchemaTree do
       true -> raise "Unsupported  type #{inspect(schema_element.type)}"
     end
   end
+
+  @doc """
+  Builds the data structures required to decode a leaf's column chunk.
+  """
+  def build_leaf_artifacts(node) do
+    artifacts = build_leaf_artifacts(node, [], 0, 0, %{0 => 0}, 0, [])
+    Enum.reverse(artifacts)
+  end
+
+  defp build_leaf_artifacts(
+         node,
+         path_info_rev,
+         max_repetition_level,
+         max_definition_level,
+         definition_level_to_furthest_path_index,
+         path_index,
+         leaves_rev
+       ) do
+    is_repeated = node.repetition_type in [:repeated]
+    is_defined = node.repetition_type in [:repeated, :optional]
+
+    max_repetition_level = max_repetition_level + if is_repeated, do: 1, else: 0
+    max_definition_level = max_definition_level + if is_defined, do: 1, else: 0
+
+    path_info_rev = [
+      %{name: node.name, is_repeated: is_repeated, type: node.type} | path_info_rev
+    ]
+
+    definition_level_to_furthest_path_index =
+      Map.put(definition_level_to_furthest_path_index, max_definition_level, path_index)
+
+    case node.children do
+      [] ->
+        leaf = %{
+          index: node.leaf_index,
+          max_repetition_level: max_repetition_level,
+          max_definition_level: max_definition_level,
+          path_info: Enum.reverse(path_info_rev),
+          definition_level_to_furthest_path_index: definition_level_to_furthest_path_index
+        }
+
+        [leaf | leaves_rev]
+
+      children ->
+        Enum.reduce(children, leaves_rev, fn child, leaves_rev ->
+          build_leaf_artifacts(
+            child,
+            path_info_rev,
+            max_repetition_level,
+            max_definition_level,
+            definition_level_to_furthest_path_index,
+            path_index + 1,
+            leaves_rev
+          )
+        end)
+    end
+  end
 end
