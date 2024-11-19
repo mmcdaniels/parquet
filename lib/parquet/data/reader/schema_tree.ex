@@ -99,7 +99,7 @@ defmodule Parquet.Data.Reader.SchemaTree do
 
             middle_tree = %{}
             middle_tree = Map.put(middle_tree, :name, middle_element.name)
-            middle_tree = Map.put(middle_tree, :type, middle_element.type)
+            middle_tree = Map.put(middle_tree, :type, normalize_group_type(middle_element))
             middle_tree = Map.put(middle_tree, :repetition_type, middle_element.repetition_type)
 
             # Parse and validate inner element
@@ -153,6 +153,10 @@ defmodule Parquet.Data.Reader.SchemaTree do
           true ->
             raise "Unsupported logical type #{inspect(schema_element.converted_type)}"
         end
+
+      true ->
+        # No type is filled out, so the type is nil
+        nil
     end
   end
 
