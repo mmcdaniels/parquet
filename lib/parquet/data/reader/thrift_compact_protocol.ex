@@ -1,4 +1,4 @@
-defmodule Parquet.ThriftCompactProtocol do
+defmodule Parquet.Data.ThriftCompactProtocol do
   alias Parquet.BinaryEncodings
 
   # FIELD TYPES
