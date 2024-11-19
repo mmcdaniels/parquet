@@ -2,9 +2,9 @@ defmodule Parquet.ThriftCompactProtocol do
   alias Parquet.BinaryEncodings
 
   # FIELD TYPES
-  # @field_type__boolean_true 1
-  # @field_type__boolean_false 2
-  # @field_type__i8 3
+  @field_type__boolean_true 1
+  @field_type__boolean_false 2
+  @field_type__i8 3
   # @field_type__i16 4
   @field_type__i32 5
   @field_type__i64 6
@@ -39,6 +39,11 @@ defmodule Parquet.ThriftCompactProtocol do
   end
 
   ###############################################################
+  defp read_int8(file) do
+    {:ok, byte} = :file.read(file, 1)
+    <<int8::integer-signed-8>> = byte
+    int8
+  end
 
   defp read_uleb128_zigzag(file) do
     {:ok, byte} = :file.read(file, 1)
@@ -112,6 +117,15 @@ defmodule Parquet.ThriftCompactProtocol do
 
     field_value =
       case field_type_id do
+        @field_type__boolean_true ->
+          true
+
+        @field_type__boolean_false ->
+          false
+
+        @field_type__i8 ->
+          read_int8(file)
+
         @field_type__i32 ->
           read_uleb128_zigzag(file)
 
