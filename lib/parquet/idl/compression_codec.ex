@@ -8,14 +8,14 @@ defmodule Parquet.Idl.CompressionCodec do
   def cast(value) when is_integer(value) do
     value =
       case value do
-        0 -> :UNCOMPRESSED
-        1 -> :SNAPPY
-        2 -> :GZIP
-        3 -> :LZO
-        4 -> :BROTLI
-        5 -> :LZ4
-        6 -> :ZSTD
-        7 -> :LZ4_RAW
+        0 -> :uncompressed
+        1 -> :snappy
+        2 -> :gzip
+        3 -> :lzo
+        4 -> :brotli
+        5 -> :lz4
+        6 -> :zstd
+        7 -> :lz4_raw
       end
 
     {:ok, value}

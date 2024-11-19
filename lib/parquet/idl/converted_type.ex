@@ -8,28 +8,28 @@ defmodule Parquet.Idl.ConvertedType do
   def cast(value) when is_integer(value) do
     value =
       case value do
-        0 -> :UTF8
-        1 -> :MAP
-        2 -> :MAP_KEY_VALUE
-        3 -> :LIST
-        4 -> :ENUM
-        5 -> :DECIMAL
-        6 -> :DATE
-        7 -> :TIME_MILLIS
-        8 -> :TIME_MICROS
-        9 -> :TIMESTAMP_MILLIS
-        10 -> :TIMESTAMP_MICROS
-        11 -> :UINT_8
-        12 -> :UINT_16
-        13 -> :UINT_32
-        14 -> :UINT_64
-        15 -> :INT_8
-        16 -> :INT_16
-        17 -> :INT_32
-        18 -> :INT_64
-        19 -> :JSON
-        20 -> :BSON
-        21 -> :INTERVAL
+        0 -> :utf8
+        1 -> :map
+        2 -> :map_key_value
+        3 -> :list
+        4 -> :enum
+        5 -> :decimal
+        6 -> :date
+        7 -> :time_millis
+        8 -> :time_micros
+        9 -> :timestamp_millis
+        10 -> :timestamp_micros
+        11 -> :uint_8
+        12 -> :uint_16
+        13 -> :uint_32
+        14 -> :uint_64
+        15 -> :int_8
+        16 -> :int_16
+        17 -> :int_32
+        18 -> :int_64
+        19 -> :json
+        20 -> :bson
+        21 -> :interval
       end
 
     {:ok, value}

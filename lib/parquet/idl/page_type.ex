@@ -8,10 +8,10 @@ defmodule Parquet.Idl.PageType do
   def cast(value) when is_integer(value) do
     value =
       case value do
-        0 -> :DATA_PAGE
-        1 -> :INDEX_PAGE
-        2 -> :DICTIONARY_PAGE
-        3 -> :DATA_PAGE_V2
+        0 -> :data_page
+        1 -> :index_page
+        2 -> :dictionary_page
+        3 -> :data_page_v2
       end
 
     {:ok, value}

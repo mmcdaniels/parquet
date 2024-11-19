@@ -8,14 +8,14 @@ defmodule Parquet.Idl.Type do
   def cast(value) when is_integer(value) do
     value =
       case value do
-        0 -> :BOOLEAN
-        1 -> :INT32
-        2 -> :INT64
-        3 -> :INT96
-        4 -> :FLOAT
-        5 -> :DOUBLE
-        6 -> :BYTE_ARRAY
-        7 -> :FIXED_LEN_BYTE_ARRAY
+        0 -> :boolean
+        1 -> :int32
+        2 -> :int64
+        3 -> :int96
+        4 -> :float
+        5 -> :double
+        6 -> :byte_array
+        7 -> :fixed_len_byte_array
       end
 
     {:ok, value}

@@ -8,9 +8,9 @@ defmodule Parquet.Idl.BoundaryOrder do
   def cast(value) when is_integer(value) do
     value =
       case value do
-        0 -> :UNORDERED
-        1 -> :ASCENDING
-        2 -> :DESCENDING
+        0 -> :unordered
+        1 -> :ascending
+        2 -> :descending
       end
 
     {:ok, value}

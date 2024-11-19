@@ -8,9 +8,9 @@ defmodule Parquet.Idl.FieldRepetitionType do
   def cast(value) when is_integer(value) do
     value =
       case value do
-        0 -> :REQUIRED
-        1 -> :OPTIONAL
-        2 -> :REPEATED
+        0 -> :required
+        1 -> :optional
+        2 -> :repeated
       end
 
     {:ok, value}

@@ -8,16 +8,16 @@ defmodule Parquet.Idl.Encoding do
   def cast(value) when is_integer(value) do
     value =
       case value do
-        0 -> :PLAIN
-        1 -> :GROUP_VAR_INT
-        2 -> :PLAIN_DICTIONARY
-        3 -> :RLE
-        4 -> :BIT_PACKED
-        5 -> :DELTA_BINARY_PACKED
-        6 -> :DELTA_LENGTH_BYTE_ARRAY
-        7 -> :DELTA_BYTE_ARRAY
-        8 -> :RLE_DICTIONARY
-        9 -> :BYTE_STREAM_SPLIT
+        0 -> :plain
+        1 -> :group_var_int
+        2 -> :plain_dictionary
+        3 -> :rle
+        4 -> :bit_packed
+        5 -> :delta_binary_packed
+        6 -> :delta_length_byte_array
+        7 -> :delta_byte_array
+        8 -> :rle_dictionary
+        9 -> :byte_stream_split
       end
 
     {:ok, value}
