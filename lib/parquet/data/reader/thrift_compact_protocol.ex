@@ -5,7 +5,7 @@ defmodule Parquet.ThriftCompactProtocol do
   @field_type__boolean_true 1
   @field_type__boolean_false 2
   @field_type__i8 3
-  # @field_type__i16 4
+  @field_type__i16 4
   @field_type__i32 5
   @field_type__i64 6
   # @field_type__double 7
@@ -21,7 +21,7 @@ defmodule Parquet.ThriftCompactProtocol do
   # @element_type__i8 3
   # @element_type__i16 4
   @element_type__i32 5
-  # @element_type__i64 6
+  @element_type__i64 6
   # @element_type__double 7
   @element_type__binary 8
   @element_type__list 9
@@ -126,6 +126,9 @@ defmodule Parquet.ThriftCompactProtocol do
         @field_type__i8 ->
           read_int8(file)
 
+        @field_type__i16 ->
+          read_uleb128_zigzag(file)
+
         @field_type__i32 ->
           read_uleb128_zigzag(file)
 
@@ -169,6 +172,9 @@ defmodule Parquet.ThriftCompactProtocol do
     element_reader_fn =
       case element_type_id do
         @element_type__i32 ->
+          fn _ -> read_uleb128_zigzag(file) end
+
+        @element_type__i64 ->
           fn _ -> read_uleb128_zigzag(file) end
 
         @element_type__binary ->
