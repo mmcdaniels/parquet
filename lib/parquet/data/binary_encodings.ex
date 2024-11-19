@@ -114,4 +114,47 @@ defmodule Parquet.BinaryEncodings do
       -div(uint + 1, 2)
     end
   end
+
+  @doc """
+    Converts Parquet hybrid-bitpacked binary input into list of unsigned integer output
+  """
+  def unpack_hybrid_bitpacked_bin_to_uints(packed_bits, bit_width) when is_binary(packed_bits) do
+    packed_bits_size = bit_size(packed_bits)
+
+    cond do
+      bit_width == 0 ->
+        raise "bit_width == 0"
+
+      bit_width > packed_bits_size ->
+        raise "bit_width > packed_bits bit count"
+
+      rem(packed_bits_size, bit_width) != 0 ->
+        raise "bit_width is not a multiple of packed_bits bit count"
+
+      true ->
+        <<byte::binary-size(1), packed_bits::binary>> = packed_bits
+        unpack_hybrid_bitpacked_bin_to_uints(packed_bits, bit_width, byte, [])
+    end
+  end
+
+  defp unpack_hybrid_bitpacked_bin_to_uints(packed_bits, bit_width, source_bits, decoded_rev) do
+    case {bit_size(packed_bits), bit_size(source_bits)} do
+      {0, 0} ->
+        Enum.reverse(decoded_rev)
+
+      {_, source_bits_size} when source_bits_size < bit_width ->
+        <<byte::binary-size(1), packed_bits::binary>> = packed_bits
+        source_bits = <<byte::binary-size(1), source_bits::bitstring>>
+        unpack_hybrid_bitpacked_bin_to_uints(packed_bits, bit_width, source_bits, decoded_rev)
+
+      {_, source_bits_size} when source_bits_size >= bit_width ->
+        <<source_bits::bitstring-size(source_bits_size - bit_width),
+          uint::unsigned-integer-size(bit_width)>> =
+          source_bits
+
+        decoded_rev = [uint | decoded_rev]
+
+        unpack_hybrid_bitpacked_bin_to_uints(packed_bits, bit_width, source_bits, decoded_rev)
+    end
+  end
 end
